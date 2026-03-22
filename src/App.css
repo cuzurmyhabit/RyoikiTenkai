@@ -1,0 +1,84 @@
+.app-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+.main-canvas-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+.main-canvas-wrap canvas {
+  display: block;
+}
+
+.app-title {
+  position: absolute;
+  top: 5vh;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 2;
+  margin: 0;
+  padding: 0;
+}
+
+.app-title__logo {
+  display: block;
+  width: min(72vw, 520px);
+  height: auto;
+  max-height: min(22vh, 200px);
+  object-fit: contain;
+  user-select: none;
+  filter: drop-shadow(0 2px 16px rgba(0, 0, 0, 0.65));
+}
+
+.hand-camera {
+  position: absolute;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  width: min(260px, 38vw);
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  z-index: 3;
+  background: #0f172a;
+}
+
+.hand-camera__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.hand-camera__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.hand-camera__loading,
+.hand-camera__error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  color: #e2e8f0;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.82);
+}
+
+.hand-camera__error {
+  color: #fca5a5;
+}
