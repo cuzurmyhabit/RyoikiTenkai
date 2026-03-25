@@ -78,7 +78,7 @@ export function HandCamera({ onTechnique, onHandOffset }: Props) {
         }
         landmarkerRef.current = landmarker;
         setReady(true);
-      } catch (e) {
+      } catch {
         try {
           const { FilesetResolver, HandLandmarker } = await import(
             '@mediapipe/tasks-vision'

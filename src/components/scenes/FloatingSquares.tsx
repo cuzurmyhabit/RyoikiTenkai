@@ -12,11 +12,13 @@ type Props = {
 function countForTechnique(t: Technique): number {
   switch (t) {
     case 'infiniteVoid':
-      return 200;
+      return 240;
     case 'hollowPurple':
-      return 170;
+      return 200;
+    case 'red':
+      return 200;
     case 'malevolentShrine':
-      return 160;
+      return 220;
     case 'idle':
       return 130;
     default:
@@ -38,7 +40,7 @@ export function FloatingSquares({
       new THREE.MeshBasicMaterial({
         color,
         transparent: true,
-        opacity: 0.62,
+        opacity: 0.67,
         side: THREE.DoubleSide,
         depthWrite: false,
         blending: THREE.AdditiveBlending,

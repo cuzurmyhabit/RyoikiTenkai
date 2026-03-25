@@ -14,6 +14,8 @@ import { HollowPurpleEffect } from './scenes/HollowPurpleEffect';
 import { RedVortexEffect } from './scenes/RedVortexEffect';
 import { InfiniteVoidEffect } from './scenes/InfiniteVoidEffect';
 import { MalevolentShrineEffect } from './scenes/MalevolentShrineEffect';
+import { NebulaDust } from './scenes/NebulaDust';
+import { WarpTunnel } from './scenes/WarpTunnel';
 
 type Props = {
   technique: Technique;
@@ -53,17 +55,28 @@ function CinematicCamera({
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     const active = technique !== 'idle';
-    const targetZ = active ? baseZ - 0.62 - strength * 0.48 : baseZ;
+    const targetZ = active ? baseZ - 0.95 - strength * 0.74 : baseZ;
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.032);
 
     const swayX =
-      Math.sin(t * (active ? 0.52 : 0.24)) * (active ? 0.16 : 0.07);
-    const swayY = Math.cos(t * 0.44) * (active ? 0.12 : 0.055);
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, swayX, 0.038);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, swayY, 0.038);
+      Math.sin(t * (active ? 0.62 : 0.24)) * (active ? 0.22 : 0.07) *
+      (1 + strength * (active ? 1.25 : 0));
+    const swayY =
+      Math.cos(t * 0.44) *
+      (active ? 0.15 : 0.055) *
+      (1 + strength * (active ? 1.15 : 0));
+
+    // 짧게 튀는 “충격감” (기술이 켜졌을 때만)
+    const shake =
+      active ? (0.016 + strength * 0.05) * (0.6 + 0.4 * Math.sin(t * 8.2)) : 0;
+    const shakeX = Math.sin(t * 9.1) * shake;
+    const shakeY = Math.cos(t * 7.2) * shake;
+
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, swayX + shakeX, 0.038);
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, swayY + shakeY, 0.038);
 
     if (camera instanceof THREE.PerspectiveCamera) {
-      const f = active ? 43.5 + strength * 6 : 47.2;
+      const f = active ? 42.5 + strength * 9 : 47.2;
       camera.fov = THREE.MathUtils.lerp(camera.fov, f, 0.022);
       camera.updateProjectionMatrix();
     }
@@ -72,17 +85,29 @@ function CinematicCamera({
   return null;
 }
 
-function ExposureRig({ technique }: { technique: Technique }) {
+function ExposureRig({
+  technique,
+  strength,
+}: {
+  technique: Technique;
+  strength: number;
+}) {
   const { gl } = useThree();
   useFrame(() => {
-    const target = technique === 'idle' ? 1.02 : 1.18;
+    const target = technique === 'idle' ? 1.02 : 1.22 + strength * 0.18;
     gl.toneMappingExposure += (target - gl.toneMappingExposure) * 0.06;
   });
   return null;
 }
 
-function PostFX({ technique }: { technique: Technique }) {
-  const bloom = useMemo(() => {
+function PostFX({
+  technique,
+  strength,
+}: {
+  technique: Technique;
+  strength: number;
+}) {
+  const bloomBase = useMemo(() => {
     switch (technique) {
       case 'hollowPurple':
         return { threshold: 0.1, intensity: 2.05, radius: 0.88 };
@@ -97,18 +122,24 @@ function PostFX({ technique }: { technique: Technique }) {
     }
   }, [technique]);
 
-  const vignette = useMemo(() => {
-    const active = technique !== 'idle';
-    return {
-      darkness: active ? 0.62 : 0.45,
-      offset: active ? 0.28 : 0.38,
-    };
-  }, [technique]);
+  const active = technique !== 'idle';
+
+  const bloom = {
+    threshold: Math.max(0.02, bloomBase.threshold * (1 - strength * 0.35)),
+    intensity: bloomBase.intensity * (1 + strength * (active ? 0.6 : 0.15)),
+    radius: bloomBase.radius * (1 + strength * (active ? 0.25 : 0.05)),
+  };
+
+  const vignette = {
+    darkness: active ? 0.66 + strength * 0.15 : 0.45,
+    offset: active ? 0.28 + strength * 0.1 : 0.38,
+  };
 
   const chromaOffset = useMemo(() => {
     const a = technique === 'idle' ? 0.00022 : 0.00115;
-    return new THREE.Vector2(a, a);
-  }, [technique]);
+    const k = active ? 1 + strength * 2.2 : 1;
+    return new THREE.Vector2(a * k, a * k);
+  }, [technique, strength, active]);
 
   return (
     <EffectComposer multisampling={0}>
@@ -141,25 +172,30 @@ function World({
 
   return (
     <>
-      <ExposureRig technique={technique} />
+      <ExposureRig technique={technique} strength={strength} />
       <CinematicCamera technique={technique} strength={strength} />
       <color attach="background" args={['#010102']} />
-      <ambientLight intensity={0.08} />
-      <pointLight position={[5, 7, 9]} intensity={0.45} color="#e8e4ff" />
-      <Starfield technique={technique} />
+      <fog attach="fog" args={['#02010a', 8, 58]} />
+      <ambientLight intensity={0.06 + strength * 0.06} />
+      <pointLight
+        position={[5, 7, 9]}
+        intensity={0.42 + strength * 0.22}
+        color="#e8e4ff"
+      />
+      <Starfield technique={technique} strength={strength} />
+      <NebulaDust technique={technique} strength={strength} getOffset={readOffset} />
       <FloatingSquares
-        visible={
-          technique === 'idle' ||
-          technique === 'hollowPurple' ||
-          technique === 'infiniteVoid' ||
-          technique === 'malevolentShrine'
-        }
+        visible={true}
         color={
           technique === 'infiniteVoid'
             ? '#22d3ee'
             : technique === 'malevolentShrine'
               ? '#7dd3fc'
-              : '#cbd5e1'
+              : technique === 'red'
+                ? '#f87171'
+                : technique === 'hollowPurple'
+                  ? '#c084fc'
+                  : '#cbd5e1'
         }
         technique={technique}
       />
@@ -183,7 +219,13 @@ function World({
         strength={strength}
         getOffset={readOffset}
       />
-      <PostFX technique={technique} />
+      <WarpTunnel
+        active={technique !== 'idle'}
+        technique={technique}
+        strength={strength}
+        getOffset={readOffset}
+      />
+      <PostFX technique={technique} strength={strength} />
     </>
   );
 }
